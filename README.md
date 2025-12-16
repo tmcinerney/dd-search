@@ -34,9 +34,11 @@ dd-search logs <QUERY> [OPTIONS]
 
 **Options:**
 - `-f, --from <TIME>` - Start time (default: `now-1h`)
-  - Relative: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
-  - ISO8601: `2024-01-15T10:00:00Z`
-  - Unix ms: `1705315200000`
+  - **Relative**: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
+    - Units: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks), `mo` (months), `y` (years)
+    - Examples: `now-30s`, `now-2h`, `now-1w`
+  - **ISO8601**: `2024-01-15T10:00:00Z` or `2024-01-15T10:00:00+00:00`
+  - **Unix timestamp**: Milliseconds since epoch (e.g., `1705315200000`)
 - `-t, --to <TIME>` - End time (default: `now`)
   - Same formats as `--from`
 - `-l, --limit <N>` - Max results (default: 100, use 0 for unlimited)
@@ -66,9 +68,11 @@ dd-search spans <QUERY> [OPTIONS]
 
 **Options:**
 - `-f, --from <TIME>` - Start time (default: `now-1h`)
-  - Relative: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
-  - ISO8601: `2024-01-15T10:00:00Z`
-  - Unix ms: `1705315200000`
+  - **Relative**: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
+    - Units: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks), `mo` (months), `y` (years)
+    - Examples: `now-30s`, `now-2h`, `now-1w`
+  - **ISO8601**: `2024-01-15T10:00:00Z` or `2024-01-15T10:00:00+00:00`
+  - **Unix timestamp**: Milliseconds since epoch (e.g., `1705315200000`)
 - `-t, --to <TIME>` - End time (default: `now`)
   - Same formats as `--from`
 - `-l, --limit <N>` - Max results (default: 100, use 0 for unlimited)
@@ -118,6 +122,31 @@ Results are output as newline-delimited JSON (NDJSON), one record per line. This
 | 4 | Invalid query |
 | 5 | Configuration error |
 | 6 | IO error |
+| 7 | Serialization error |
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all unit tests
+cargo test
+
+# Run integration tests (requires DD_API_KEY and DD_APP_KEY)
+cargo test --test integration_tests -- --ignored
+```
+
+### Project Structure
+
+- `src/` - Main source code
+  - `cli.rs` - Command-line interface definitions
+  - `client/` - Datadog API client wrappers
+  - `commands/` - Command implementations (logs, spans)
+  - `config.rs` - Configuration loading
+  - `error.rs` - Error types and exit codes
+  - `output.rs` - NDJSON output writer
+  - `time.rs` - Time range validation utilities
+- `tests/` - Integration tests
 
 ## License
 
