@@ -126,6 +126,42 @@ Results are output as newline-delimited JSON (NDJSON), one record per line. This
 
 ## Development
 
+### Setup
+
+#### Pre-commit Hooks
+
+This project uses [cargo-husky](https://github.com/rhysd/cargo-husky) for Rust-native git hooks. The hooks are automatically installed when you run `cargo test` for the first time.
+
+To manually install the hooks:
+
+```bash
+# Run cargo test once to trigger hook installation
+cargo test
+
+# Or manually install the hook
+cp .husky/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+The pre-commit hooks will:
+- Check code formatting with `cargo fmt`
+- Run clippy linter with strict warnings
+- Run unit tests
+
+#### GitHub Actions
+
+CI/CD is configured via GitHub Actions. The workflow runs on push and pull requests to `main`. It includes:
+
+- **Formatting check**: Verifies code is properly formatted
+- **Clippy**: Runs Rust linter with strict warnings
+- **Build**: Ensures the project compiles
+- **Tests**: Runs unit tests (integration tests require credentials)
+
+To enable integration tests in CI, add the following secrets to your GitHub repository:
+- `DD_API_KEY`: Your Datadog API key
+- `DD_APP_KEY`: Your Datadog application key
+- `DD_SITE`: (Optional) Your Datadog site (defaults to `datadoghq.com`)
+
 ### Running Tests
 
 ```bash

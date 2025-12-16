@@ -1,0 +1,25 @@
+#!/bin/sh
+# Pre-commit hook for dd-search
+# This hook runs cargo fmt, clippy, and tests before committing
+
+set -e
+
+echo "Running cargo fmt..."
+cargo fmt --all -- --check || {
+    echo "❌ Code formatting check failed. Run 'cargo fmt --all' to fix."
+    exit 1
+}
+
+echo "Running cargo clippy..."
+cargo clippy --all-targets --all-features -- -D warnings || {
+    echo "❌ Clippy found issues. Please fix them before committing."
+    exit 1
+}
+
+echo "Running cargo test (unit tests only)..."
+cargo test --lib || {
+    echo "❌ Tests failed. Please fix them before committing."
+    exit 1
+}
+
+echo "✅ All pre-commit checks passed!"
