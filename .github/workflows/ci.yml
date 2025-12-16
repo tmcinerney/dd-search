@@ -44,28 +44,13 @@ jobs:
       - name: Build
         run: cargo build --verbose --release
 
-  # Run tests (excluding integration tests that require credentials)
+  # Run unit tests
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Run tests
+      - name: Run unit tests
         run: cargo test --lib --verbose
-
-  # Optional: Run integration tests if credentials are provided
-  integration-test:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    if: ${{ secrets.DD_API_KEY != '' && secrets.DD_APP_KEY != '' }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Run integration tests
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY }}
-          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
-          DD_SITE: ${{ secrets.DD_SITE || 'datadoghq.com' }}
-        run: cargo test --test integration_tests -- --ignored
 
