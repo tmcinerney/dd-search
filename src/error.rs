@@ -51,3 +51,58 @@ impl AppError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_auth_error_exit_code() {
+        let error = AppError::Auth("test".to_string());
+        assert_eq!(error.exit_code(), 2);
+    }
+
+    #[test]
+    fn test_api_error_exit_code() {
+        let error = AppError::Api("test".to_string());
+        assert_eq!(error.exit_code(), 3);
+    }
+
+    #[test]
+    fn test_invalid_query_error_exit_code() {
+        let error = AppError::InvalidQuery("test".to_string());
+        assert_eq!(error.exit_code(), 4);
+    }
+
+    #[test]
+    fn test_config_error_exit_code() {
+        let error = AppError::Config("test".to_string());
+        assert_eq!(error.exit_code(), 5);
+    }
+
+    #[test]
+    fn test_io_error_exit_code() {
+        let error = AppError::Io(std::io::Error::new(std::io::ErrorKind::Other, "test"));
+        assert_eq!(error.exit_code(), 6);
+    }
+
+    #[test]
+    fn test_serialization_error_exit_code() {
+        let invalid_json = "invalid json";
+        let error: AppError = serde_json::from_str::<serde_json::Value>(invalid_json)
+            .unwrap_err()
+            .into();
+        assert_eq!(error.exit_code(), 7);
+    }
+
+    #[test]
+    fn test_error_display() {
+        let auth_error = AppError::Auth("invalid credentials".to_string());
+        assert!(format!("{}", auth_error).contains("Authentication failed"));
+        assert!(format!("{}", auth_error).contains("invalid credentials"));
+
+        let api_error = AppError::Api("connection failed".to_string());
+        assert!(format!("{}", api_error).contains("API error"));
+        assert!(format!("{}", api_error).contains("connection failed"));
+    }
+}

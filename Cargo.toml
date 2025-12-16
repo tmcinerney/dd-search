@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 description = "CLI tool for querying Datadog logs and APM spans"
 
+[lib]
+name = "dd_search"
+path = "src/lib.rs"
+
 [dependencies]
 # CLI parsing
 clap = { version = "4.4", features = ["derive"] }
@@ -23,3 +27,7 @@ serde_json = "1.0"
 
 # Error handling
 thiserror = "1.0"
+
+[dev-dependencies]
+# Time handling for integration tests
+chrono = "0.4"

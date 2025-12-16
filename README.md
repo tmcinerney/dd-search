@@ -34,7 +34,11 @@ dd-search logs <QUERY> [OPTIONS]
 
 **Options:**
 - `-f, --from <TIME>` - Start time (default: `now-1h`)
+  - Relative: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
+  - ISO8601: `2024-01-15T10:00:00Z`
+  - Unix ms: `1705315200000`
 - `-t, --to <TIME>` - End time (default: `now`)
+  - Same formats as `--from`
 - `-l, --limit <N>` - Max results (default: 100, use 0 for unlimited)
 - `-i, --indexes <LIST>` - Log indexes to search (default: all)
 
@@ -62,7 +66,11 @@ dd-search spans <QUERY> [OPTIONS]
 
 **Options:**
 - `-f, --from <TIME>` - Start time (default: `now-1h`)
+  - Relative: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
+  - ISO8601: `2024-01-15T10:00:00Z`
+  - Unix ms: `1705315200000`
 - `-t, --to <TIME>` - End time (default: `now`)
+  - Same formats as `--from`
 - `-l, --limit <N>` - Max results (default: 100, use 0 for unlimited)
 
 **Examples:**
@@ -74,8 +82,11 @@ dd-search spans "service:web env:prod"
 # Find slow spans
 dd-search spans "service:api @duration:>1s" --limit 50
 
-# Search with absolute time range
+# Search with absolute time range (ISO8601)
 dd-search spans "service:db" --from "2024-01-15T10:00:00Z" --to "2024-01-15T11:00:00Z"
+
+# Search with Unix timestamp (milliseconds)
+dd-search spans "service:api" --from "1705315200000" --to "1705318800000"
 ```
 
 ## Query Syntax

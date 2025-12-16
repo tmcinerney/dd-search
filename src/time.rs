@@ -1,0 +1,268 @@
+//! Time range parsing and validation utilities.
+//!
+//! Provides functions to validate and parse Datadog time range formats.
+//!
+//! According to [Datadog API v2 documentation](https://docs.datadoghq.com/api/latest/logs/),
+//! the Logs and Spans APIs support three time formats:
+//!
+//! 1. **Date Math Expressions**: Relative time calculations
+//!    - `now` - Current time
+//!    - `now-15m` - 15 minutes ago
+//!    - `now-1h` - 1 hour ago
+//!    - `now-1d` - 1 day ago
+//!    - Units: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks), `mo` (months), `y` (years)
+//!
+//! 2. **ISO8601 Date-Time Strings**: Standard timestamp format
+//!    - `2024-01-15T10:00:00Z` - UTC timezone
+//!    - `2024-01-15T10:00:00+00:00` - With timezone offset
+//!    - `2024-01-15T10:00:00.123Z` - With milliseconds
+//!
+//! 3. **Unix Timestamps**: Milliseconds since Unix epoch
+//!    - `1705315200000` - Milliseconds since January 1, 1970 UTC
+//!
+//! All formats are passed directly to Datadog's API, which handles the parsing.
+
+/// Validates that a time string is in a format Datadog accepts.
+///
+/// Datadog accepts three formats:
+/// 1. **Relative times**: "now", "now-NUMBERUNIT" where unit is s, m, h, d, w, mo, y
+/// 2. **ISO8601 timestamps**: "2024-01-15T10:00:00Z" or with timezone offsets
+/// 3. **Unix timestamps**: milliseconds since Unix epoch (numeric string)
+///
+/// This function performs basic validation. The actual parsing is done by Datadog's API.
+///
+/// # Arguments
+///
+/// * `time_str` - Time string to validate
+///
+/// # Returns
+///
+/// `true` if the format appears valid, `false` otherwise
+pub fn is_valid_time_format(time_str: &str) -> bool {
+    if time_str.is_empty() {
+        return false;
+    }
+
+    // Check for relative time format: "now" or "now-<number><unit>"
+    if time_str == "now" {
+        return true;
+    }
+
+    if time_str.starts_with("now-") {
+        let rest = &time_str[4..];
+        if rest.is_empty() {
+            return false;
+        }
+
+        // Parse number and unit
+        let mut chars = rest.chars();
+        let mut num_str = String::new();
+
+        // Collect digits
+        while let Some(c) = chars.next() {
+            if c.is_ascii_digit() {
+                num_str.push(c);
+            } else {
+                // Check if it's a valid unit
+                let unit = format!("{}{}", c, chars.as_str());
+                return matches!(unit.as_str(), "s" | "m" | "h" | "d" | "w" | "mo" | "y")
+                    && !num_str.is_empty();
+            }
+        }
+
+        // If we got here, there was no unit
+        return false;
+    }
+
+    // Check for ISO8601 format (basic check)
+    // Format: YYYY-MM-DDTHH:MM:SS[.SSS][Z|+HH:MM|-HH:MM]
+    if time_str.len() >= 19 {
+        // Check for date part: YYYY-MM-DD
+        let date_part = &time_str[0..10];
+        if date_part.chars().filter(|c| c == &'-').count() == 2 {
+            // Check for T separator
+            if time_str.len() > 10 && time_str.chars().nth(10) == Some('T') {
+                // Basic ISO8601 format detected
+                return true;
+            }
+        }
+    }
+
+    // Check for Unix timestamp (milliseconds since epoch)
+    // Should be all digits and represent a reasonable timestamp
+    // (between 1970 and 2100, roughly 0 to 4102444800000)
+    if time_str.chars().all(|c| c.is_ascii_digit()) && !time_str.is_empty() {
+        if let Ok(timestamp) = time_str.parse::<u64>() {
+            // Valid Unix timestamp range: 0 to ~4102444800000 (year 2100)
+            if timestamp <= 4_102_444_800_000 {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+/// Validates that a time range is logically correct.
+///
+/// Checks that:
+/// - Both times are in valid formats
+/// - `from` is before `to` (when both are absolute timestamps)
+///
+/// Note: Relative times like "now-1h" and "now" are always considered valid
+/// as they're evaluated by Datadog at query time.
+///
+/// # Arguments
+///
+/// * `from` - Start time string
+/// * `to` - End time string
+///
+/// # Returns
+///
+/// `true` if the range appears valid, `false` otherwise
+pub fn is_valid_time_range(from: &str, to: &str) -> bool {
+    if !is_valid_time_format(from) || !is_valid_time_format(to) {
+        return false;
+    }
+
+    // If both are relative times, they're always valid
+    if (from == "now" || from.starts_with("now-"))
+        && (to == "now" || to.starts_with("now-"))
+    {
+        return true;
+    }
+
+    // If both are absolute timestamps, we could validate ordering,
+    // but for now we'll let Datadog handle it
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_relative_times() {
+        // Basic "now"
+        assert!(is_valid_time_format("now"));
+
+        // Seconds
+        assert!(is_valid_time_format("now-1s"));
+        assert!(is_valid_time_format("now-30s"));
+        assert!(is_valid_time_format("now-90s"));
+
+        // Minutes
+        assert!(is_valid_time_format("now-1m"));
+        assert!(is_valid_time_format("now-15m"));
+        assert!(is_valid_time_format("now-30m"));
+        assert!(is_valid_time_format("now-60m"));
+
+        // Hours
+        assert!(is_valid_time_format("now-1h"));
+        assert!(is_valid_time_format("now-2h"));
+        assert!(is_valid_time_format("now-24h"));
+
+        // Days
+        assert!(is_valid_time_format("now-1d"));
+        assert!(is_valid_time_format("now-7d"));
+        assert!(is_valid_time_format("now-30d"));
+
+        // Weeks
+        assert!(is_valid_time_format("now-1w"));
+        assert!(is_valid_time_format("now-2w"));
+
+        // Months
+        assert!(is_valid_time_format("now-1mo"));
+        assert!(is_valid_time_format("now-6mo"));
+
+        // Years
+        assert!(is_valid_time_format("now-1y"));
+        assert!(is_valid_time_format("now-2y"));
+    }
+
+    #[test]
+    fn test_invalid_relative_times() {
+        assert!(!is_valid_time_format("now-"));
+        assert!(!is_valid_time_format("now-abc"));
+        assert!(!is_valid_time_format("now-1"));
+        assert!(!is_valid_time_format("now-1x"));
+        assert!(!is_valid_time_format("now-1hm"));
+    }
+
+    #[test]
+    fn test_valid_iso8601_times() {
+        // Basic ISO8601 with Z (UTC)
+        assert!(is_valid_time_format("2024-01-15T10:00:00Z"));
+        assert!(is_valid_time_format("2024-12-31T23:59:59Z"));
+        assert!(is_valid_time_format("1970-01-01T00:00:00Z"));
+
+        // ISO8601 with timezone offset
+        assert!(is_valid_time_format("2024-01-15T10:00:00+00:00"));
+        assert!(is_valid_time_format("2024-01-15T10:00:00-05:00"));
+        assert!(is_valid_time_format("2024-01-15T10:00:00+09:00"));
+
+        // ISO8601 with milliseconds
+        assert!(is_valid_time_format("2024-01-15T10:00:00.123Z"));
+        assert!(is_valid_time_format("2024-01-15T10:00:00.999Z"));
+
+        // ISO8601 with microseconds (if supported)
+        assert!(is_valid_time_format("2024-01-15T10:00:00.123456Z"));
+    }
+
+    #[test]
+    fn test_valid_unix_timestamps() {
+        // Valid Unix timestamps in milliseconds (as per Datadog API)
+        assert!(is_valid_time_format("0")); // Epoch start: 1970-01-01T00:00:00Z
+        assert!(is_valid_time_format("1609459200000")); // 2021-01-01T00:00:00Z
+        assert!(is_valid_time_format("1705315200000")); // 2024-01-15T10:00:00Z
+        assert!(is_valid_time_format("4102444800000")); // Year 2100 (upper bound)
+
+        // Common timestamps
+        assert!(is_valid_time_format("1000000000000")); // 2001-09-09
+        assert!(is_valid_time_format("946684800000")); // 2000-01-01
+    }
+
+    #[test]
+    fn test_invalid_unix_timestamps() {
+        // Too large (beyond year 2100)
+        assert!(!is_valid_time_format("5000000000000"));
+        // Negative (not supported as string)
+        assert!(!is_valid_time_format("-1000"));
+    }
+
+    #[test]
+    fn test_invalid_time_formats() {
+        assert!(!is_valid_time_format(""));
+        assert!(!is_valid_time_format("invalid"));
+        assert!(!is_valid_time_format("2024-01-15"));
+        assert!(!is_valid_time_format("10:00:00"));
+        assert!(!is_valid_time_format("now+1h"));
+    }
+
+    #[test]
+    fn test_valid_time_ranges() {
+        // Relative times
+        assert!(is_valid_time_range("now-1h", "now"));
+        assert!(is_valid_time_range("now-15m", "now"));
+        assert!(is_valid_time_range("now-1d", "now"));
+
+        // Absolute times
+        assert!(is_valid_time_range(
+            "2024-01-15T10:00:00Z",
+            "2024-01-15T11:00:00Z"
+        ));
+
+        // Mixed (relative and absolute)
+        assert!(is_valid_time_range("now-1h", "2024-01-15T11:00:00Z"));
+        assert!(is_valid_time_range("2024-01-15T10:00:00Z", "now"));
+    }
+
+    #[test]
+    fn test_invalid_time_ranges() {
+        assert!(!is_valid_time_range("", "now"));
+        assert!(!is_valid_time_range("now", ""));
+        assert!(!is_valid_time_range("invalid", "now"));
+        assert!(!is_valid_time_range("now", "invalid"));
+    }
+}
+

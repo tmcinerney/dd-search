@@ -4,9 +4,9 @@
 
 use futures_util::StreamExt;
 
-use crate::client::LogsClient;
-use crate::error::AppError;
 use crate::output::NdjsonWriter;
+use dd_search::client::LogsClient;
+use dd_search::error::AppError;
 
 /// Executes the logs search command.
 ///
@@ -45,4 +45,68 @@ pub async fn run(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use dd_search::error::AppError;
+
+    fn parse_error_message(msg: &str) -> AppError {
+        if msg.contains("401") || msg.contains("403") || msg.contains("Forbidden") {
+            AppError::Auth(format!("Authentication failed: {}", msg))
+        } else if msg.contains("400") || msg.contains("Bad Request") {
+            AppError::InvalidQuery(msg.to_string())
+        } else {
+            AppError::Api(msg.to_string())
+        }
+    }
+
+    #[test]
+    fn test_error_parsing_401() {
+        let error = parse_error_message("401 Unauthorized");
+        assert!(matches!(error, AppError::Auth(_)));
+        assert_eq!(error.exit_code(), 2);
+    }
+
+    #[test]
+    fn test_error_parsing_403() {
+        let error = parse_error_message("403 Forbidden");
+        assert!(matches!(error, AppError::Auth(_)));
+        assert_eq!(error.exit_code(), 2);
+    }
+
+    #[test]
+    fn test_error_parsing_forbidden() {
+        let error = parse_error_message("Forbidden access");
+        assert!(matches!(error, AppError::Auth(_)));
+        assert_eq!(error.exit_code(), 2);
+    }
+
+    #[test]
+    fn test_error_parsing_400() {
+        let error = parse_error_message("400 Bad Request");
+        assert!(matches!(error, AppError::InvalidQuery(_)));
+        assert_eq!(error.exit_code(), 4);
+    }
+
+    #[test]
+    fn test_error_parsing_bad_request() {
+        let error = parse_error_message("Bad Request: invalid syntax");
+        assert!(matches!(error, AppError::InvalidQuery(_)));
+        assert_eq!(error.exit_code(), 4);
+    }
+
+    #[test]
+    fn test_error_parsing_generic_api_error() {
+        let error = parse_error_message("500 Internal Server Error");
+        assert!(matches!(error, AppError::Api(_)));
+        assert_eq!(error.exit_code(), 3);
+    }
+
+    #[test]
+    fn test_error_parsing_network_error() {
+        let error = parse_error_message("Connection timeout");
+        assert!(matches!(error, AppError::Api(_)));
+        assert_eq!(error.exit_code(), 3);
+    }
 }

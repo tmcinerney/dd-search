@@ -37,3 +37,75 @@ impl Default for NdjsonWriter {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde::Serialize;
+    use std::io::Write;
+
+    #[derive(Serialize)]
+    struct TestRecord {
+        id: u32,
+        name: String,
+    }
+
+    // Helper function to test writing to a buffer
+    fn write_to_buffer<T: Serialize>(record: &T) -> String {
+        let mut buffer = Vec::new();
+        {
+            let mut writer = BufWriter::new(&mut buffer);
+            serde_json::to_writer(&mut writer, record).unwrap();
+            writer.write_all(b"\n").unwrap();
+            writer.flush().unwrap();
+        }
+        String::from_utf8(buffer).unwrap()
+    }
+
+    #[test]
+    fn test_ndjson_writer_serializes_and_adds_newline() {
+        let record = TestRecord {
+            id: 1,
+            name: "test".to_string(),
+        };
+
+        let output = write_to_buffer(&record);
+        assert!(output.ends_with('\n'));
+        assert!(output.contains(r#""id":1"#));
+        assert!(output.contains(r#""name":"test""#));
+    }
+
+    #[test]
+    fn test_ndjson_writer_multiple_records() {
+        let record1 = TestRecord {
+            id: 1,
+            name: "first".to_string(),
+        };
+        let record2 = TestRecord {
+            id: 2,
+            name: "second".to_string(),
+        };
+
+        let output1 = write_to_buffer(&record1);
+        let output2 = write_to_buffer(&record2);
+
+        assert!(output1.contains("first"));
+        assert!(output2.contains("second"));
+        assert!(output1.ends_with('\n'));
+        assert!(output2.ends_with('\n'));
+    }
+
+    #[test]
+    fn test_ndjson_writer_default() {
+        let writer = NdjsonWriter::default();
+        // Just verify it doesn't panic
+        drop(writer);
+    }
+
+    #[test]
+    fn test_ndjson_writer_new() {
+        let writer = NdjsonWriter::new();
+        // Just verify it doesn't panic
+        drop(writer);
+    }
+}

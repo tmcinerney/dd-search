@@ -32,8 +32,8 @@ impl LogsClient {
     /// # Arguments
     ///
     /// * `query` - Datadog query syntax (e.g., "service:api AND status:error")
-    /// * `from` - Start time (relative like "now-1h" or ISO8601)
-    /// * `to` - End time (relative like "now" or ISO8601)
+    /// * `from` - Start time: relative ("now-1h"), ISO8601 ("2024-01-15T10:00:00Z"), or Unix ms ("1705315200000")
+    /// * `to` - End time: relative ("now"), ISO8601 ("2024-01-15T10:00:00Z"), or Unix ms ("1705315200000")
     /// * `indexes` - Log indexes to search (use ["*"] for all)
     pub fn search(
         &self,

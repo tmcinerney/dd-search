@@ -18,14 +18,15 @@
 use clap::Parser;
 
 mod cli;
-mod client;
 mod commands;
-mod config;
-mod error;
 mod output;
 
+// Import from library crate
+use dd_search::client;
+use dd_search::config;
+use dd_search::error::AppError;
+
 use cli::{Cli, Commands};
-use error::AppError;
 
 #[tokio::main]
 async fn main() {

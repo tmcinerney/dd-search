@@ -22,11 +22,11 @@ pub enum Commands {
         /// Datadog query string (e.g., "service:api AND @http.status_code:500")
         query: String,
 
-        /// Start time - relative (now-1h) or ISO8601
+        /// Start time - relative (now-1h), ISO8601 (2024-01-15T10:00:00Z), or Unix ms (1705315200000)
         #[arg(short, long, default_value = "now-1h")]
         from: String,
 
-        /// End time - relative (now) or ISO8601
+        /// End time - relative (now), ISO8601 (2024-01-15T10:00:00Z), or Unix ms (1705315200000)
         #[arg(short, long, default_value = "now")]
         to: String,
 
@@ -44,11 +44,11 @@ pub enum Commands {
         /// Datadog query string (e.g., "service:web env:prod @duration:>1s")
         query: String,
 
-        /// Start time - relative (now-1h) or ISO8601
+        /// Start time - relative (now-1h), ISO8601 (2024-01-15T10:00:00Z), or Unix ms (1705315200000)
         #[arg(short, long, default_value = "now-1h")]
         from: String,
 
-        /// End time - relative (now) or ISO8601
+        /// End time - relative (now), ISO8601 (2024-01-15T10:00:00Z), or Unix ms (1705315200000)
         #[arg(short, long, default_value = "now")]
         to: String,
 

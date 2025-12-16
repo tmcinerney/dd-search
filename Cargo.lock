@@ -321,6 +321,7 @@ dependencies = [
 name = "dd-search"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "clap",
  "datadog-api-client",
  "futures-util",
