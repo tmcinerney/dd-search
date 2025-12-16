@@ -61,7 +61,10 @@ async fn test_logs_search_with_relative_time() {
     }
 
     // If we got here without panicking, the time range was accepted
-    println!("Successfully queried {} logs with relative time range", count);
+    println!(
+        "Successfully queried {} logs with relative time range",
+        count
+    );
 }
 
 #[tokio::test]
@@ -111,7 +114,10 @@ async fn test_logs_search_with_iso8601_time() {
         }
     }
 
-    println!("Successfully queried {} logs with ISO8601 time range", count);
+    println!(
+        "Successfully queried {} logs with ISO8601 time range",
+        count
+    );
 }
 
 #[tokio::test]
@@ -155,12 +161,11 @@ async fn test_logs_search_various_time_ranges() {
         let mut stream = std::pin::pin!(client.search(query, from, to, indexes));
         let mut has_result = false;
 
-        // Just check that the query doesn't error out
-        while let Some(result) = stream.next().await {
+        // Just check that the query doesn't error out - check first result
+        if let Some(result) = stream.next().await {
             match result {
                 Ok(_) => {
                     has_result = true;
-                    break; // Got at least one result, that's enough
                 }
                 Err(e) => {
                     let msg = format!("{}", e);
@@ -173,10 +178,8 @@ async fn test_logs_search_various_time_ranges() {
                             "Warning: 403 Forbidden for time range {} to {} - may indicate insufficient permissions",
                             from, to
                         );
-                        break;
                     }
                     // Other errors might be acceptable (no logs in range, etc.)
-                    break;
                 }
             }
         }
@@ -229,7 +232,10 @@ async fn test_spans_search_with_relative_time() {
         }
     }
 
-    println!("Successfully queried {} spans with relative time range", count);
+    println!(
+        "Successfully queried {} spans with relative time range",
+        count
+    );
 }
 
 #[tokio::test]
@@ -277,7 +283,10 @@ async fn test_spans_search_with_iso8601_time() {
         }
     }
 
-    println!("Successfully queried {} spans with ISO8601 time range", count);
+    println!(
+        "Successfully queried {} spans with ISO8601 time range",
+        count
+    );
 }
 
 #[tokio::test]
@@ -317,11 +326,11 @@ async fn test_spans_search_various_time_ranges() {
         let mut stream = std::pin::pin!(client.search(query, from, to));
         let mut has_result = false;
 
-        while let Some(result) = stream.next().await {
+        // Check first result to verify query format
+        if let Some(result) = stream.next().await {
             match result {
                 Ok(_) => {
                     has_result = true;
-                    break;
                 }
                 Err(e) => {
                     let msg = format!("{}", e);
@@ -336,9 +345,7 @@ async fn test_spans_search_various_time_ranges() {
                             "Warning: 403 Forbidden for time range {} to {} - may indicate insufficient permissions or APM not enabled",
                             from, to
                         );
-                        break;
                     }
-                    break;
                 }
             }
         }
@@ -347,7 +354,11 @@ async fn test_spans_search_various_time_ranges() {
             "Time range {} to {}: {}",
             from,
             to,
-            if has_result { "OK" } else { "No results or access denied" }
+            if has_result {
+                "OK"
+            } else {
+                "No results or access denied"
+            }
         );
     }
 }
@@ -420,7 +431,7 @@ async fn test_time_range_edge_cases() {
 
     // Test edge cases for time ranges (all valid Datadog formats)
     let edge_cases = vec![
-        ("now-1s", "now"),   // Very short range (1 second)
+        ("now-1s", "now"),  // Very short range (1 second)
         ("now-90s", "now"), // 90 seconds
         ("now-30m", "now"), // 30 minutes
         ("now-2h", "now"),  // 2 hours
@@ -475,4 +486,3 @@ async fn test_time_range_edge_cases() {
         );
     }
 }
-

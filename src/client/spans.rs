@@ -5,8 +5,8 @@
 use datadog_api_client::datadog::{self, Configuration};
 use datadog_api_client::datadogV2::api_spans::SpansAPI;
 use datadog_api_client::datadogV2::model::{
-    Span, SpansListRequest, SpansListRequestAttributes, SpansListRequestData,
-    SpansListRequestPage, SpansListRequestType, SpansQueryFilter, SpansSort,
+    Span, SpansListRequest, SpansListRequestAttributes, SpansListRequestData, SpansListRequestPage,
+    SpansListRequestType, SpansQueryFilter, SpansSort,
 };
 use futures_util::Stream;
 
@@ -40,8 +40,12 @@ impl SpansClient {
         query: &str,
         from: &str,
         to: &str,
-    ) -> impl Stream<Item = Result<Span, datadog::Error<datadog_api_client::datadogV2::api_spans::ListSpansError>>> + '_
-    {
+    ) -> impl Stream<
+        Item = Result<
+            Span,
+            datadog::Error<datadog_api_client::datadogV2::api_spans::ListSpansError>,
+        >,
+    > + '_ {
         let body = SpansListRequest::new().data(
             SpansListRequestData::new()
                 .attributes(

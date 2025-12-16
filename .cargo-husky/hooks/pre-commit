@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Pre-commit hook: Run formatting and linting checks
+#
+
+set -e
+
+echo '+cargo fmt --check'
+cargo fmt --check
+
+echo '+cargo clippy --all-targets --all-features -- -D warnings'
+cargo clippy --all-targets --all-features -- -D warnings

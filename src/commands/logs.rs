@@ -30,11 +30,17 @@ pub async fn run(
         let log = result.map_err(|e| {
             let msg = format!("{}", e);
             logger.log_error(&msg, "logs API request");
-            
+
             if msg.contains("401") {
-                AppError::Auth(format!("Authentication failed (401): Invalid API or App key. {}", msg))
+                AppError::Auth(format!(
+                    "Authentication failed (401): Invalid API or App key. {}",
+                    msg
+                ))
             } else if msg.contains("403") || msg.contains("Forbidden") {
-                AppError::Auth(format!("Access denied (403): Your API key may not have permission to access logs. {}", msg))
+                AppError::Auth(format!(
+                    "Access denied (403): Your API key may not have permission to access logs. {}",
+                    msg
+                ))
             } else if msg.contains("400") || msg.contains("Bad Request") {
                 AppError::InvalidQuery(msg)
             } else {

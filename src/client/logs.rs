@@ -41,8 +41,9 @@ impl LogsClient {
         from: &str,
         to: &str,
         indexes: Vec<String>,
-    ) -> impl Stream<Item = Result<Log, datadog::Error<datadog_api_client::datadogV2::api_logs::ListLogsError>>> + '_
-    {
+    ) -> impl Stream<
+        Item = Result<Log, datadog::Error<datadog_api_client::datadogV2::api_logs::ListLogsError>>,
+    > + '_ {
         let body = LogsListRequest::new()
             .filter(
                 LogsQueryFilter::new()

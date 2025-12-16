@@ -29,7 +29,7 @@ pub async fn run(
         let span = result.map_err(|e| {
             let msg = format!("{}", e);
             logger.log_error(&msg, "spans API request");
-            
+
             if msg.contains("401") {
                 AppError::Auth(format!("Authentication failed (401): Invalid API or App key. {}", msg))
             } else if msg.contains("403") || msg.contains("Forbidden") {

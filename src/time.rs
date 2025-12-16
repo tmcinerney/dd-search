@@ -48,8 +48,7 @@ pub fn is_valid_time_format(time_str: &str) -> bool {
         return true;
     }
 
-    if time_str.starts_with("now-") {
-        let rest = &time_str[4..];
+    if let Some(rest) = time_str.strip_prefix("now-") {
         if rest.is_empty() {
             return false;
         }
@@ -91,12 +90,13 @@ pub fn is_valid_time_format(time_str: &str) -> bool {
     // Check for Unix timestamp (milliseconds since epoch)
     // Should be all digits and represent a reasonable timestamp
     // (between 1970 and 2100, roughly 0 to 4102444800000)
-    if time_str.chars().all(|c| c.is_ascii_digit()) && !time_str.is_empty() {
-        if let Ok(timestamp) = time_str.parse::<u64>() {
-            // Valid Unix timestamp range: 0 to ~4102444800000 (year 2100)
-            if timestamp <= 4_102_444_800_000 {
-                return true;
-            }
+    if time_str.chars().all(|c| c.is_ascii_digit())
+        && !time_str.is_empty()
+        && let Ok(timestamp) = time_str.parse::<u64>()
+    {
+        // Valid Unix timestamp range: 0 to ~4102444800000 (year 2100)
+        if timestamp <= 4_102_444_800_000 {
+            return true;
         }
     }
 
@@ -126,9 +126,7 @@ pub fn is_valid_time_range(from: &str, to: &str) -> bool {
     }
 
     // If both are relative times, they're always valid
-    if (from == "now" || from.starts_with("now-"))
-        && (to == "now" || to.starts_with("now-"))
-    {
+    if (from == "now" || from.starts_with("now-")) && (to == "now" || to.starts_with("now-")) {
         return true;
     }
 
@@ -265,4 +263,3 @@ mod tests {
         assert!(!is_valid_time_range("now", "invalid"));
     }
 }
-

@@ -35,6 +35,6 @@ urlencoding = "2.1"
 # Time handling for integration tests
 chrono = "0.4"
 # Git hooks for pre-commit checks
-cargo-husky = "1"
+cargo-husky = { version = "1", default-features = false, features = ["user-hooks"] }
 # Serial test execution for environment variable tests
 serial_test = "3"

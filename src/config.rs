@@ -98,7 +98,10 @@ mod tests {
             ],
             || {
                 let result = load_config();
-                assert!(result.is_ok(), "load_config should succeed with valid credentials");
+                assert!(
+                    result.is_ok(),
+                    "load_config should succeed with valid credentials"
+                );
             },
         );
     }
@@ -113,8 +116,11 @@ mod tests {
             ],
             || {
                 let result = load_config();
-                assert!(result.is_err(), "load_config should fail when DD_API_KEY is missing");
-                
+                assert!(
+                    result.is_err(),
+                    "load_config should fail when DD_API_KEY is missing"
+                );
+
                 if let Err(AppError::Config(msg)) = result {
                     assert!(
                         msg.contains("DD_API_KEY"),
@@ -143,8 +149,11 @@ mod tests {
             ],
             || {
                 let result = load_config();
-                assert!(result.is_err(), "load_config should fail when DD_APP_KEY is missing");
-                
+                assert!(
+                    result.is_err(),
+                    "load_config should fail when DD_APP_KEY is missing"
+                );
+
                 if let Err(AppError::Config(msg)) = result {
                     assert!(
                         msg.contains("DD_APP_KEY"),
@@ -168,8 +177,11 @@ mod tests {
             ],
             || {
                 let result = load_config();
-                assert!(result.is_err(), "load_config should fail when DD_API_KEY is empty");
-                
+                assert!(
+                    result.is_err(),
+                    "load_config should fail when DD_API_KEY is empty"
+                );
+
                 if let Err(AppError::Config(msg)) = result {
                     assert!(
                         msg.contains("DD_API_KEY"),
@@ -198,8 +210,11 @@ mod tests {
             ],
             || {
                 let result = load_config();
-                assert!(result.is_err(), "load_config should fail when DD_APP_KEY is empty");
-                
+                assert!(
+                    result.is_err(),
+                    "load_config should fail when DD_APP_KEY is empty"
+                );
+
                 if let Err(AppError::Config(msg)) = result {
                     assert!(
                         msg.contains("DD_APP_KEY"),
@@ -230,7 +245,10 @@ mod tests {
             || {
                 let result = load_config();
                 // Should succeed even with DD_SITE set (it's optional)
-                assert!(result.is_ok(), "load_config should succeed with DD_SITE set");
+                assert!(
+                    result.is_ok(),
+                    "load_config should succeed with DD_SITE set"
+                );
             },
         );
     }

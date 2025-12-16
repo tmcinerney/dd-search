@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn test_io_error_exit_code() {
-        let error = AppError::Io(std::io::Error::new(std::io::ErrorKind::Other, "test"));
+        let error = AppError::Io(std::io::Error::other("test"));
         assert_eq!(error.exit_code(), 6);
     }
 
