@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # Check code formatting
+  # Fast checks that don't need full compilation
   fmt:
     name: Check Formatting
     runs-on: ubuntu-latest
@@ -22,7 +22,6 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-  # Run clippy linter
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
@@ -31,25 +30,20 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - uses: Swatinem/rust-cache@v2
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-  # Build the project
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build
-        run: cargo build --verbose --release
-
-  # Run unit tests
+  # Test job includes building (cargo test builds the project)
   test:
-    name: Test
+    name: Build & Test
     runs-on: ubuntu-latest
+    needs: [fmt, clippy]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Run unit tests
-        run: cargo test --lib --verbose
+      - uses: Swatinem/rust-cache@v2
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Build release
+        run: cargo build --release --verbose
