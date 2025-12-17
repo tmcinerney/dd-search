@@ -2,11 +2,77 @@
 
 A command-line tool for querying Datadog logs, APM spans, and metrics. Outputs NDJSON for easy piping to `jq` or other tools.
 
+## Quick Start
+
+```bash
+# Install
+cargo install --path .
+
+# Set credentials
+export DD_API_KEY="your-api-key"
+export DD_APP_KEY="your-app-key"
+
+# Search logs
+ddog logs search "service:api AND status:error"
+
+# Query metrics
+ddog metrics query "avg:system.cpu.user{*}" --from now-1h
+
+# Search spans
+ddog spans search "service:web @duration:>1s"
+```
+
 ## Installation
+
+### Pre-built Binaries
+
+Download the latest release from [GitHub Releases](https://github.com/tmcinerney/ddog/releases):
+
+```bash
+# macOS (Apple Silicon)
+curl -L https://github.com/tmcinerney/ddog/releases/latest/download/ddog-darwin-aarch64.tar.gz | tar xz
+sudo mv ddog /usr/local/bin/
+
+# macOS (Intel)
+curl -L https://github.com/tmcinerney/ddog/releases/latest/download/ddog-darwin-x86_64.tar.gz | tar xz
+sudo mv ddog /usr/local/bin/
+
+# Linux (x86_64)
+curl -L https://github.com/tmcinerney/ddog/releases/latest/download/ddog-linux-x86_64.tar.gz | tar xz
+sudo mv ddog /usr/local/bin/
+```
+
+### Using Cargo
+
+Install from local source using cargo:
+
+```bash
+# Install from local source
+cargo install --path .
+
+# Or build and install with locked dependencies
+cargo install --path . --locked
+```
+
+This installs `ddog` to your cargo bin directory (typically `~/.cargo/bin`), which should be in your PATH if you're using rustup.
+
+### Manual Build
+
+Alternatively, build and copy manually:
 
 ```bash
 cargo build --release
 cp target/release/ddog /usr/local/bin/
+```
+
+### Uninstallation
+
+```bash
+# If installed via cargo
+cargo uninstall ddog
+
+# If installed manually
+rm /usr/local/bin/ddog
 ```
 
 ## Configuration
@@ -37,7 +103,53 @@ Your application key must have the following scopes/permissions:
 
 **Note:** If you get a 403 Forbidden error, check that your application key has the required permissions in your Datadog account settings.
 
+## Output Format
+
+All commands output newline-delimited JSON (NDJSON), with one record per line. This format works seamlessly with:
+
+- **`jq`** - For JSON filtering and transformation
+- **Line tools** - `grep`, `head`, `tail`, `wc`
+- **Streaming** - Pipe to files or other processes
+
+```bash
+# Filter with jq
+ddog logs search "service:api" | jq '.attributes.message'
+
+# Count results
+ddog logs search "status:error" | wc -l
+
+# Get first 10 results
+ddog spans search "service:web" | head -10
+```
+
 ## Usage
+
+### Common Options
+
+Most commands share these options:
+
+#### Time Range Options
+
+- `-f, --from <TIME>` - Start time (default: `now-1h`)
+- `-t, --to <TIME>` - End time (default: `now`)
+
+**Supported Time Formats:**
+
+| Format | Description | Example | Supported By |
+|--------|-------------|---------|--------------|
+| **Relative** | Time relative to now | `now-15m`, `now-1h`, `now-1d` | All commands |
+| **ISO8601** | ISO 8601 timestamp | `2024-01-15T10:00:00Z` | Logs, Spans |
+| **Unix** | Unix timestamp (ms) | `1705315200000` | All commands |
+
+**Relative Time Units:**
+- `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks), `mo` (months), `y` (years)
+- Examples: `now-30s`, `now-2h`, `now-1w`, `now-3mo`
+
+**Note:** Metrics commands do not yet support ISO8601 format.
+
+#### Pagination Options
+
+- `-l, --limit <N>` - Maximum results/data points (default varies by command, use 0 for unlimited)
 
 ### Logs
 
@@ -46,16 +158,10 @@ ddog logs search <QUERY> [OPTIONS]
 ```
 
 **Options:**
-- `-f, --from <TIME>` - Start time (default: `now-1h`)
-  - **Relative**: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
-    - Units: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks), `mo` (months), `y` (years)
-    - Examples: `now-30s`, `now-2h`, `now-1w`
-  - **ISO8601**: `2024-01-15T10:00:00Z` or `2024-01-15T10:00:00+00:00`
-  - **Unix timestamp**: Milliseconds since epoch (e.g., `1705315200000`)
-- `-t, --to <TIME>` - End time (default: `now`)
-  - Same formats as `--from`
+- `-f, --from <TIME>` - Start time (default: `now-1h`) - See [Common Options](#common-options)
+- `-t, --to <TIME>` - End time (default: `now`) - See [Common Options](#common-options)
 - `-l, --limit <N>` - Max results (default: 100, use 0 for unlimited)
-- `-i, --indexes <LIST>` - Log indexes to search (default: all)
+- `-i, --indexes <LIST>` - Log indexes to search (comma-separated, default: all)
 
 **Examples:**
 
@@ -80,14 +186,8 @@ ddog spans search <QUERY> [OPTIONS]
 ```
 
 **Options:**
-- `-f, --from <TIME>` - Start time (default: `now-1h`)
-  - **Relative**: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
-    - Units: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `w` (weeks), `mo` (months), `y` (years)
-    - Examples: `now-30s`, `now-2h`, `now-1w`
-  - **ISO8601**: `2024-01-15T10:00:00Z` or `2024-01-15T10:00:00+00:00`
-  - **Unix timestamp**: Milliseconds since epoch (e.g., `1705315200000`)
-- `-t, --to <TIME>` - End time (default: `now`)
-  - Same formats as `--from`
+- `-f, --from <TIME>` - Start time (default: `now-1h`) - See [Common Options](#common-options)
+- `-t, --to <TIME>` - End time (default: `now`) - See [Common Options](#common-options)
 - `-l, --limit <N>` - Max results (default: 100, use 0 for unlimited)
 
 **Examples:**
@@ -113,12 +213,8 @@ ddog metrics query <QUERY> [OPTIONS]
 ```
 
 **Options:**
-- `-f, --from <TIME>` - Start time (default: `now-1h`)
-  - **Relative**: `now`, `now-15m`, `now-1h`, `now-1d`, etc.
-  - **Unix timestamp**: Seconds or milliseconds since epoch (e.g., `1705315200` or `1705315200000`)
-  - **Note**: ISO8601 format not yet supported for metrics
-- `-t, --to <TIME>` - End time (default: `now`)
-  - Same formats as `--from`
+- `-f, --from <TIME>` - Start time (default: `now-1h`) - See [Common Options](#common-options) (ISO8601 not supported)
+- `-t, --to <TIME>` - End time (default: `now`) - See [Common Options](#common-options)
 - `-l, --limit <N>` - Max data points (default: 1000, use 0 for unlimited)
 
 **Examples:**
@@ -150,9 +246,8 @@ ddog metrics list [OPTIONS]
 ```
 
 **Options:**
-- `-f, --from <TIME>` - Start time (default: `now-1h`)
-  - Metrics active after this time will be listed
-- `-t, --to <TIME>` - End time (optional, defaults to now)
+- `-f, --from <TIME>` - Start time (default: `now-1h`) - Metrics active after this time will be listed - See [Common Options](#common-options)
+- `-t, --to <TIME>` - End time (default: `now`) - See [Common Options](#common-options)
 
 **Examples:**
 
@@ -194,14 +289,6 @@ Metrics queries use [Datadog's metric query syntax](https://docs.datadoghq.com/d
 - **Wildcards**: `avg:system.cpu.user{host:web-*}`
 - **Arithmetic**: `avg:system.cpu.user{*} + avg:system.cpu.system{*}`
 - **Functions**: `avg:system.cpu.user{*}.rollup(avg, 60)` - 60s rollup
-
-## Output
-
-Results are output as newline-delimited JSON (NDJSON), one record per line. This format works well with:
-
-- `jq` for JSON filtering
-- Line-oriented tools like `grep`, `head`, `tail`
-- Streaming to files or other processes
 
 ## Exit Codes
 

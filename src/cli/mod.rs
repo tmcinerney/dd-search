@@ -11,5 +11,5 @@ mod spans;
 pub use args::{Cli, Domain};
 pub use logs::LogsAction;
 pub use metrics::MetricsAction;
-pub use shared::{Pagination, TimeRange};
+pub use shared::{Pagination, TimeRange, TimeRangeRelativeOnly};
 pub use spans::SpansAction;

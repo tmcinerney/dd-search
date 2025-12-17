@@ -5,7 +5,7 @@
 use futures_util::StreamExt;
 use serde::Serialize;
 
-use crate::cli::TimeRange;
+use crate::cli::TimeRangeRelativeOnly;
 use crate::logging::VerboseLogger;
 use crate::output::NdjsonWriter;
 use ddog::client::MetricsClient;
@@ -23,7 +23,7 @@ struct MetricName {
 /// Lists active metrics within the specified time window and streams them to stdout as NDJSON.
 pub async fn run(
     client: MetricsClient,
-    time_range: TimeRange,
+    time_range: TimeRangeRelativeOnly,
     logger: VerboseLogger,
 ) -> Result<(), AppError> {
     // Convert time string to Unix seconds
