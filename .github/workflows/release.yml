@@ -26,6 +26,7 @@ jobs:
         id: release
         with:
           release-type: rust
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
   # Build and upload release artifacts when a release is created
   build-release:
