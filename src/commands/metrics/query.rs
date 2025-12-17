@@ -4,7 +4,7 @@
 
 use futures_util::StreamExt;
 
-use crate::cli::TimeRange;
+use crate::cli::TimeRangeRelativeOnly;
 use crate::logging::VerboseLogger;
 use crate::output::NdjsonWriter;
 use ddog::client::MetricsClient;
@@ -18,7 +18,7 @@ use ddog::time::parse_to_unix_seconds;
 pub async fn run(
     client: MetricsClient,
     query: String,
-    time_range: TimeRange,
+    time_range: TimeRangeRelativeOnly,
     limit: u64,
     logger: VerboseLogger,
 ) -> Result<(), AppError> {
