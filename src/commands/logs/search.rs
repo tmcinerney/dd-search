@@ -1,42 +1,45 @@
-//! Spans subcommand implementation.
+//! Logs search command implementation.
 //!
-//! Handles the `dd-search spans` command, streaming APM span results to stdout.
+//! Handles the `ddog logs search` command, streaming log results to stdout.
 
 use futures_util::StreamExt;
 
+use crate::cli::{Pagination, TimeRange};
 use crate::logging::VerboseLogger;
 use crate::output::NdjsonWriter;
-use dd_search::client::SpansClient;
-use dd_search::error::AppError;
+use ddog::client::LogsClient;
+use ddog::error::AppError;
 
-/// Executes the spans search command.
+/// Executes the logs search command.
 ///
-/// Streams matching span records to stdout as NDJSON until the limit is reached
+/// Streams matching log records to stdout as NDJSON until the limit is reached
 /// or all results are exhausted.
 pub async fn run(
-    client: SpansClient,
+    client: LogsClient,
     query: String,
-    from: String,
-    to: String,
-    limit: u64,
+    time_range: TimeRange,
+    pagination: Pagination,
+    indexes: Vec<String>,
     logger: VerboseLogger,
 ) -> Result<(), AppError> {
     let mut writer = NdjsonWriter::new();
-    let mut stream = std::pin::pin!(client.search(&query, &from, &to));
+    let mut stream =
+        std::pin::pin!(client.search(&query, &time_range.from, &time_range.to, indexes));
     let mut count: u64 = 0;
 
     while let Some(result) = stream.next().await {
-        let span = result.map_err(|e| {
+        let log = result.map_err(|e| {
             let msg = format!("{}", e);
-            logger.log_error(&msg, "spans API request");
+            logger.log_error(&msg, "logs API request");
 
             if msg.contains("401") {
-                AppError::Auth(format!("Authentication failed (401): Invalid API or App key. {}", msg))
+                AppError::Auth(format!(
+                    "Authentication failed (401): Invalid API or App key. {}",
+                    msg
+                ))
             } else if msg.contains("403") || msg.contains("Forbidden") {
                 AppError::Auth(format!(
-                    "Access denied (403): Your API key may not have permission to access APM spans. \
-                    Note: APM spans require different permissions than logs. \
-                    Ensure your API key has 'APM and Infrastructure' read permissions. {}",
+                    "Access denied (403): Your API key may not have permission to access logs. {}",
                     msg
                 ))
             } else if msg.contains("400") || msg.contains("Bad Request") {
@@ -46,22 +49,22 @@ pub async fn run(
             }
         })?;
 
-        writer.write(&span)?;
+        writer.write(&log)?;
         count += 1;
 
-        if limit > 0 && count >= limit {
-            logger.log(&format!("Reached limit of {} results", limit));
+        if pagination.limit > 0 && count >= pagination.limit {
+            logger.log(&format!("Reached limit of {} results", pagination.limit));
             break;
         }
     }
 
-    logger.log(&format!("Returned {} span(s)", count));
+    logger.log(&format!("Returned {} log(s)", count));
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use dd_search::error::AppError;
+    use ddog::error::AppError;
 
     fn parse_error_message(msg: &str) -> AppError {
         if msg.contains("401") || msg.contains("403") || msg.contains("Forbidden") {
