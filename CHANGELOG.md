@@ -15,3 +15,4 @@
 ### Bug Fixes
 
 * **lint:** resolve CI formatting and clippy errors ([fcfeda7](https://github.com/tmcinerney/ddog/commit/fcfeda7da79cf8e47820da29b0e0f3064b41c290))
+
